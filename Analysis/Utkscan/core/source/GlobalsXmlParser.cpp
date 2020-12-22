@@ -78,6 +78,9 @@ void GlobalsXmlParser::ParseGlobalNode(const pugi::xml_node &node, Globals *glob
             globals->SetAdcClockInSeconds(10e-9);
             globals->SetClockInSeconds(10e-9);
             globals->SetFilterClockInSeconds(10e-9);
+            globals->SetAdcClockInSeconds(100,10e-9);
+            globals->SetClockInSeconds(100,10e-9);
+            globals->SetFilterClockInSeconds(100,10e-9);
         } else if (revision == "F") {
             // Users of mixed crates are expected to pass the correct freq to the Get...Clock() functions
             // For legacy/ compatibility reasons we will default Rev F to 250 MHz

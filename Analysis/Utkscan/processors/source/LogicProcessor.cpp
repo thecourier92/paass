@@ -259,6 +259,10 @@ bool LogicProcessor::PreProcess(RawEvent &event) {
             TreeCorrelator::get()->place("Measure")->activate(time);
         } else if (place == "logic_MSD_0"){
             TreeCorrelator::get()->place("Measure")->deactivate(time);
+        } else if (place == "logic_BGU_0"){
+            TreeCorrelator::get()->place("Background")->activate(time);
+        } else if (place == "logic_BGD_0"){
+            TreeCorrelator::get()->place("Background")->deactivate(time);
         }
 
     }//events loop

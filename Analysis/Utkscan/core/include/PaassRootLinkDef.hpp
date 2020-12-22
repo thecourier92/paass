@@ -34,6 +34,12 @@
 #pragma link C++ struct processor_struct::MTAS+;
 #pragma link C++ class std::vector<processor_struct::MTAS>+;
 
+#pragma link C++ struct processor_struct::MTASSILICON+;
+#pragma link C++ class std::vector<processor_struct::MTASSILICON>+;
+
+#pragma link C++ struct processor_struct::MTASPSPMT+;
+#pragma link C++ class std::vector<processor_struct::MTASPSPMT>+;
+
 #pragma link C++ class PixTreeEvent+;
 #pragma link C++ class std::vector<PixTreeEvent>+;
 #endif

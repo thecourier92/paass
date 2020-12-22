@@ -44,12 +44,19 @@ const int DD_Energy_AB_Fire_AB_Spec = 21;
 const int D_Left_Gated_1D = 22;
 const int D_Right_Gated_1D = 23;
 const int D_Both_Gated_1D = 24;
+const int D_DIAG_HITS = 25;
+const int DD_DIAG_MULTIPLICITY_PER_CHANNEL = 26;
+const int D_PSPMT_CHAN_1 = 27;
+const int D_PSPMT_CHAN_2 = 28;
+const int D_PSPMT_CHAN_3 = 29;
+const int D_PSPMT_CHAN_4 = 30;
+const int D_SUM_PSPMT = 31;
 
 }  // namespace mtaspspmt
 }  // namespace dammIds
 
 void MtasPspmtProcessor::DeclarePlots() {
-    DeclareHistogram2D(DD_POS_DIAG, SB, SB, "Diagnostic Detector Positions");
+    DeclareHistogram2D(DD_POS_DIAG, SE, SE, "Diagnostic Detector Positions");
     DeclareHistogram2D(DD_POS_IMPL, SB, SB, "Implant Detector Positions");
     // Added by Cooper
     DeclareHistogram1D(D_RATE_IMPL, SE, "Implant Rate vs Current Time check");
@@ -62,7 +69,15 @@ void MtasPspmtProcessor::DeclarePlots() {
     DeclareHistogram2D(DD_Beta_Gamma_Time2D,SC,SC,"Gamma energy versus time difference");
     DeclareHistogram2D(DD_Beta_Tdiff2D,SC,SC,"Beta energy versus time difference");
     DeclareHistogram2D(DD_gamma_cycle,SC,SC,"Ge energy time in cycle");
-    DeclareHistogram2D(DD_Gated_Gamma_2D,SC,SE,"Gated Ge energy vs time 2D");
+    DeclareHistogram2D(DD_Gated_Gamma_2D,SC,SD,"Gated Ge energy vs time 2D");
+    DeclareHistogram1D(D_DIAG_HITS,S4,"2x2 Detector Hits Per Channel");
+    DeclareHistogram2D(DD_DIAG_MULTIPLICITY_PER_CHANNEL,S4,S6,"2x2 Detector Multiplicity Per Channel");
+    DeclareHistogram1D(D_PSPMT_CHAN_1,SE,"PSPMT 1D Energy Spectra, Channel 1");
+    DeclareHistogram1D(D_PSPMT_CHAN_2,SE,"PSPMT 1D Energy Spectra, Channel 2");
+    DeclareHistogram1D(D_PSPMT_CHAN_3,SE,"PSPMT 1D Energy Spectra, Channel 3");
+    DeclareHistogram1D(D_PSPMT_CHAN_4,SE,"PSPMT 1D Energy Spectra, Channel 4");
+    DeclareHistogram1D(D_SUM_PSPMT,SE,"All 4 Channels of PSPMT Summed");
+    /*
     DeclareHistogram2D(DD_Left_Gated_2D,SC,SE,"Left SiPM Gated Ge energy vs time 2D");
     DeclareHistogram2D(DD_Right_Gated_2D,SC,SE,"Right SiPM Gated Ge energy vs time 2D");
     DeclareHistogram2D(DD_Both_Gated_2D,SC,SE,"Both SiPM Gated Ge energy vs time 2D");
@@ -71,6 +86,7 @@ void MtasPspmtProcessor::DeclarePlots() {
     DeclareHistogram2D(DD_Energy_B_Fire_B_Spec,SC,SE,"Right SiPM fire, Right SiPM Spectrum 2D");
     DeclareHistogram2D(DD_Energy_B_Fire_A_Spec,SC,SE,"Right SiPM fire, Left SiPM Spectrum 2D");
     DeclareHistogram2D(DD_Energy_AB_Fire_AB_Spec,SC,SE,"Both SiPM fire, Both SiPM Spectrum 2D");
+    */
     // DeclareHistogram1D(StartHist,SE,"Start times of beam")
 }
 
@@ -84,7 +100,7 @@ MtasPspmtProcessor::MtasPspmtProcessor(const double &impl_scale, const unsigned 
     implThreshold_ = 5;
     diagPosScale_ = diag_scale;
     diagPosOffset_ = diag_offset;
-    diagThreshold_ = diag_threshold;
+    diagThreshold_ = 30;
 
     associatedTypes.insert("mtaspspmt");
     // cout << "1";
@@ -108,6 +124,13 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
         first_time = DetectorDriver::get()->GetFirstEventTimeinNs();
         first_time_beta = first_time;
     }
+    map<string,int> group_map = 
+    { 
+        {"xa",0},
+        {"xb",1},
+        {"ya",2},
+        {"yb",3},
+    };
     double time1 = 0;
     double bunch_time = 0.0;
     double counter_true = 0.0;
@@ -123,6 +146,7 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
     evtNum_ = DetectorDriver::get()->GetEventNumber();
     // bool beta_ev, gamma_ev,has_beta;
     vector<ChanEvent *> impl = event.GetSummary("mtaspspmt:implant")->GetList();
+    vector<ChanEvent *> diag = event.GetSummary("mtaspspmt:diag")->GetList();
     vector<ChanEvent *> geEvents = event.GetSummary("ge")->GetList();
     // cout << "check" << 2 << endl;
     // cout << "GE event size is " << (event.GetSummary("ge")->GetList()).size() << endl;
@@ -174,7 +198,9 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
             sumImpl += energy;
             counter_xa = true;
             plot(D_MULTIPL,1);
+            /* This is commented out solely to free up histogram space (scanor) for MTAS processor
             plot(DD_Energy_A_Fire_A_Spec,xa,CycleTdiff);
+            */
         }
         //cout << "checkagain" << endl;
         if (group == "xb" && xb == 0) {
@@ -183,7 +209,8 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
             sumImpl += energy;
             counter_xb = true;
             plot(D_MULTIPL,2);
-            plot(DD_Energy_B_Fire_B_Spec,xb,CycleTdiff);
+            /* This is commented out solely to free up histogram space (scanor) for MTAS processor
+            plot(DD_Energy_B_Fire_B_Spec,xb,CycleTdiff); */
         }
 
         if (xa > 0 && xb > 0) {
@@ -194,9 +221,11 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
             plot(DD_POS_IMPL, x * implPosScale_ + implPosOffset_, y * implPosScale_ + implPosOffset_);
             plot(D_MULTIPL,3);
             plot(D_RATE_IMPL, bin_num);
+            /* This is commented out solely to free up histogram space (scanor) for MTAS processor
             plot(DD_Energy_AB_Fire_AB_Spec,sumImpl,CycleTdiff);
             plot(DD_Energy_B_Fire_A_Spec,xa,CycleTdiff);
             plot(DD_Energy_A_Fire_B_Spec,xb,CycleTdiff);
+            */
 
             // beta_t << std::to_string(currentTime) << "\n";
             // beta_e << std::to_string(xa+xb) << "\n";
@@ -206,8 +235,8 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
             MTASPSstruct = processor_struct::MTASPSPMT_DEFAULT_STRUCT;
             MTASPSstruct.energy = energy;
             MTASPSstruct.time = currentTime2;
-            MTASPSstruct.subtype = "mtaspspmt:implant";
-            MTASPSstruct.group = group;
+            // MTASPSstruct.subtype = "mtaspspmt:implant";
+            // MTASPSstruct.group = group;
             MTASPSstruct.modNum = (*it)->GetModuleNumber();
             MTASPSstruct.chanNum = (*it)->GetChannelNumber();
 
@@ -241,13 +270,15 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
             double  CycleTdiff =  gTime - lastTape ;
             plot(DD_gamma_cycle,CycleTdiff , energy); 
             plot(D_ENERGY,(*ge)->GetCalibratedEnergy());
+            plot(DD_Gated_Gamma_2D,energy,CycleTdiff*1000);
+            // This is commented out solely to free up histogram space (scanor) for MTAS processor
             if (beta_ev){
                 plot(D_Beta_Gate_HPGe,(*ge)->GetCalibratedEnergy());
-                time_dif = (gamma_time - beta_time) + 250; 
+                /*time_dif = (gamma_time - beta_time) + 250; 
                 plot(D_Beta_Gamma_Time,time_dif);
                 plot(DD_Beta_Gamma_Time2D,time_dif,energy);
                 plot(DD_Beta_Tdiff2D,time_dif,sumImpl); 
-                plot(DD_Gated_Gamma_2D,energy,CycleTdiff);
+
                 if (left_beta_ev){
                 plot(DD_Left_Gated_2D,energy,CycleTdiff);
                 plot(D_Left_Gated_1D,energy);
@@ -260,7 +291,9 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
                 plot(DD_Both_Gated_2D,energy,CycleTdiff);
                 plot(D_Both_Gated_1D,energy);
                 }
+                */
             }
+            
             plot(D_RAW_ENERGY,(*ge)->GetEnergy());
         }
         
@@ -326,7 +359,7 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
     //             if (energy < geThreshold) {
     //                 continue;
     //             }
-    //             plot(D_Beta_Gate_HPGe,energy);
+   //             plot(D_Beta_Gate_HPGe,energy);
     //         }
 
     //     // cout << "yes";
@@ -342,19 +375,63 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
 
     
     // cout << "10";
-
-    /*
+    double evtnum0 = DetectorDriver::get()->GetEventNumber();
+    
     // DIAGNOSTIC DETECTOR Calculations
+    double energy = 0,xa = 0,xb = 0,ya = 0,yb = 0;
     double sumDiag = 0;
+    double xa_hit = 0, xb_hit = 0, ya_hit = 0, yb_hit = 0;
+    if (DetectorDriver::get()->GetSysRootOutput()){
+        MTASPSstruct = processor_struct::MTASPSPMT_DEFAULT_STRUCT;
+        for(auto it = diag.begin(); it != diag.end(); it++){
+            energy = (*it)->GetCalibratedEnergy();
+            MTASPSstruct.energy = energy;
+            MTASPSstruct.time = diag.front()->GetTimeSansCfd() * 10;
+            // MTASPSstruct.subtype = "mtaspspmt:diag";
+            MTASPSstruct.group = (group_map.find((*it)->GetChanID().GetGroup())->second);
+            MTASPSstruct.modNum = (*it)->GetModuleNumber();
+            MTASPSstruct.chanNum = (*it)->GetChannelNumber();
+            MTASPSstruct.evtnum1 = evtnum0;
+            // cout << "the type of the group is " << typeid(group_map.find(MTASPSstruct.group)->second).name() << endl;
+            pixie_tree_event_->mtaspspmt_vec_.emplace_back(MTASPSstruct);
+            MTASPSstruct = processor_struct::MTASPSPMT_DEFAULT_STRUCT;
+        }
+    } 
     for (auto it = diag.begin(); it != diag.end(); it++) {
+
+
+        // cout << "had a diag event" << endl;
         energy = (*it)->GetCalibratedEnergy();
-        if (energy < diagThreshold_) {
+        if ((energy < diagThreshold_) || (energy > 60000)){
+            // cout << "below threshold" << endl;
             continue;
         }
         std::string group = (*it)->GetChanID().GetGroup();
+
+        if (group == "xa"){
+            plot(D_DIAG_HITS,1);
+            xa_hit = xa_hit + 1;
+        }
+        
+        if (group == "xb"){
+            plot(D_DIAG_HITS,2);
+            xb_hit = xb_hit + 1;
+        }
+        
+        if (group == "ya"){
+            ya_hit = ya_hit + 1;
+            plot(D_DIAG_HITS,3);
+        }
+        
+        if (group == "yb"){
+            yb_hit = yb_hit + 1;
+            plot(D_DIAG_HITS,4);
+        }
+        // cout << group << endl;
         if (group == "xa" && xa == 0) {
             xa = energy;
             sumDiag += energy;
+            // cout << "inside xa" << endl;
         }
         if (group == "xb" && xb == 0) {
             xb = energy;
@@ -368,16 +445,96 @@ bool MtasPspmtProcessor::PreProcess(RawEvent &event) {
             yb = energy;
             sumDiag += energy;
         }
+        // check how many times each group is being triggered per event
 
-        if (xa > 0. && xb > 0. && ya > 0. && yb > 0.) {
+
+
+
+
+        if (xa > 0.0 && xb > 0.0 && ya > 0.0 && yb > 0.0) {
             double x = 0., y = 0.;
+            double x1, x2,x3,y1,y2,y3, x4, y4, x_val,y_val;
             x = ((xa + ya) - (xb + yb)) / (xa + xb + ya + yb);
             y = ((xa + xb) - (ya + yb)) / (xa + xb + ya + yb);
-            plot(DD_POS_DIAG, x * diagPosScale_ + diagPosOffset_
-            ., y * diagPosScale_ + diagPosOffset_);
+            // xa = xa*10;
+            // xb = xb*10;
+            // ya = ya*10;
+            // yb = yb*10;
+            double tot1 = (xa + xb + ya + yb);
+            // x = 1*((xa/(tot1))*1.0 + (xb/tot1)*1000.0 + (ya/tot1)*1.0 + (yb/tot1)*1000.0);
+            // y = 1*((xa/(tot1))*1000.0 + (xb/tot1)*1000.0 + (ya/tot1)*1.0 + (yb/tot1)*1.0);
+            // x1 = (xa/(xa+xb))*xa + (xb/(xa+xb))*xb;
+            // y1 = (xa/(xa+ya))*xa + (ya/(xa+ya))*ya;
+
+            // x2 = (xa/(xa+xb))*xa + (xb/(xa+xb))*xb;
+            // y2 = (xb/(xb+yb))*xb + (yb/(xb+yb))*yb;
+
+            // x3 = (ya/(ya+yb))*ya + (yb/(ya+yb))*yb;
+            // y3 = (xa/(xa+ya))*xa + (ya/(xa+ya))*ya;
+
+            // x4 = (ya/(ya+yb))*ya + (yb/(ya+yb))*yb;
+            // y4 = (xb/(xb+ya))*xb + (ya/(xb+ya))*ya;            
+
+            x1 = (xa/(xa+xb))*0.5;
+            y1 = (xa/(xa+ya))*0.5;
+
+            x2 = (xb/(xa+xb))*0.5;
+            y2 = (xb/(xb+yb))*0.5;
+
+            x3 = (ya/(ya+yb))*0.5;
+            y3 = (ya/(xa+ya))*0.5;
+
+            x4 = (yb/(ya+yb))*0.5;
+            y4 = (yb/(xb+yb))*0.5;  
+
+            double val1 = (x1+y1);
+            double val2 = (x2+y2);  
+            double val3 = (x3+y3);
+            double val4 = (x4+y4);
+
+            // x = (val1*1.0 + val2*2 + val3*1.0 + val4*2)*150;
+            // y = (val1*2 + val2*2 + val3*1.0 + val4*1.0)*150;
+
+            // x1 = (xa+ya)/2;
+            // x2 = (xb+yb)/2;
+            // x3 = (x1+x2)/2;
+            // y1 = (xa+xb)/2;
+            // y2 = (ya+yb)/2;
+            // y3 = (y1 +y2)/2;
+
+            // x1 = (xa + ya)/2;
+            // x2 = (xa + xb)/2;
+            // x3 = (xb + yb)/2;
+            // x4 = (ya + yb)/2;
+            
+            // x_val = x3 - x1;
+            // y_val = x2 - x4;
+            // plot(DD_POS_DIAG, x3 * diagPosScale_ + diagPosOffset_, y3 * diagPosScale_ + diagPosOffset_);
+            plot(DD_POS_DIAG, x*100 + 1000, y*100 + 1000);
+	    //            if (group == "xa"){
+                plot(D_PSPMT_CHAN_1,xa);
+		//}
+		//if (group == "xb"){
+                plot(D_PSPMT_CHAN_2,xb);
+		//}
+		//if (group == "ya"){
+                plot(D_PSPMT_CHAN_3,ya);
+		//}
+		//            if (group == "yb"){
+                plot(D_PSPMT_CHAN_4,yb);
+		//            }
+
+            double temp_var1 = xa+xb+ya+yb;
+            plot(D_SUM_PSPMT,temp_var1);
         }
+
     }
-    */
+
+    plot(DD_DIAG_MULTIPLICITY_PER_CHANNEL,0,xa_hit);
+    plot(DD_DIAG_MULTIPLICITY_PER_CHANNEL,1,xb_hit);
+    plot(DD_DIAG_MULTIPLICITY_PER_CHANNEL,2,ya_hit);
+    plot(DD_DIAG_MULTIPLICITY_PER_CHANNEL,3,yb_hit);
+    
     // cout << "10";
     EndProcess();
 

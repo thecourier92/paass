@@ -7,6 +7,7 @@
 #define _MTASPSPMTPROCESSOR_HPP_
 
 #include <string>
+#include <vector>
 #include <map>
 #include <algorithm>
 #include <climits>

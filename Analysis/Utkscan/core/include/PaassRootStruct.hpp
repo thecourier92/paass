@@ -69,9 +69,26 @@ struct MTAS {
 	double rawEnergy = -999;
 	double calEnergy = -999;
 	double time = -999;
+    bool in_MTAS = false;
+    bool background11 = false;
+    double cyclestart11 = -999;
+    int event_num1 = -999;
+    int chan_num1 = -999;
+    int mod_num1 = -999;
 	TString subtype = "";
 };
 static const MTAS MTAS_DEFAULT_STRUCT;
+
+struct MTASSILICON {
+	double rawEnergy = -999;
+	double calEnergy = -999;
+	double time = -999;
+    double event_num2 = -999;
+    double chan_num2 = -999;
+    double mod_num2 = -999;
+	TString subtype = "";
+};
+static const MTASSILICON MTAS_SILICON_STRUCT;
 
 struct MTASPSPMT {
     double energy = -999;
@@ -81,7 +98,8 @@ struct MTASPSPMT {
     bool double_beta_hit = false;
     TString subtype = "";
     TString tag = "";
-    TString group = "";
+    int group = -999;
+    double evtnum1 = -999;
 };
 static const MTASPSPMT MTASPSPMT_DEFAULT_STRUCT;
 
@@ -175,6 +193,7 @@ class PixTreeEvent : public TObject {
         ge_vec_ = obj.ge_vec_;
         logic_vec_ = obj.logic_vec_;
         mtas_vec_ = obj.mtas_vec_;
+        mtas_silicon_vec_ = obj.mtas_silicon_vec_;
         mtaspspmt_vec_ = obj.mtaspspmt_vec_;
         pspmt_vec_ = obj.pspmt_vec_;
         root_dev_vec_ = obj.root_dev_vec_;
@@ -196,6 +215,7 @@ class PixTreeEvent : public TObject {
         ge_vec_.clear();
         logic_vec_.clear();
         mtas_vec_.clear();
+        mtas_silicon_vec_.clear();
         mtaspspmt_vec_.clear();
         pspmt_vec_.clear();
         root_dev_vec_.clear();
@@ -214,6 +234,7 @@ class PixTreeEvent : public TObject {
     std::vector<processor_struct::CLOVERS> ge_vec_;
     std::vector<processor_struct::LOGIC> logic_vec_;
     std::vector<processor_struct::MTAS> mtas_vec_;
+    std::vector<processor_struct::MTASSILICON> mtas_silicon_vec_;
     std::vector<processor_struct::MTASPSPMT> mtaspspmt_vec_;
     std::vector<processor_struct::PSPMT> pspmt_vec_;
     std::vector<processor_struct::ROOTDEV> root_dev_vec_;
